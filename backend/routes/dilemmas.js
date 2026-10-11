@@ -147,6 +147,31 @@ router.post('/judge', auth, upload.single('image'), async (req, res) => {
       return res.status(400).json({ message: 'กรุณาระบุสิ่งที่ต้องการให้ตัดสินใจ' });
     }
 
+    // ป้องกันการส่งซ้ำจาก Double-click หรือ Network Retry ในช่วง 3 วินาที
+    const [recent] = await db.query(
+      `SELECT id, title, price, image_path, mode, ai_verdict, ai_reason, created_at 
+       FROM dilemmas 
+       WHERE user_id = ? AND title = ? AND created_at >= NOW() - INTERVAL 3 SECOND 
+       ORDER BY id DESC LIMIT 1`,
+      [userId, title]
+    );
+
+    if (recent.length > 0) {
+      const existing = recent[0];
+      const numPrice = Number(existing.price) || 0;
+      return res.json({
+        id: existing.id,
+        title: existing.title,
+        price: numPrice,
+        image_path: existing.image_path,
+        mode: existing.mode,
+        guilt_level: guilt,
+        food_equivalent: numPrice > 0 ? `เท่ากับข้าวกะเพราไข่ดาว ${Math.round(numPrice / 60)} จาน 🍛` : null,
+        ai_verdict: existing.ai_verdict,
+        ai_reason: existing.ai_reason
+      });
+    }
+
     const selectedMode = mode || 'roast';
     const aiResult = await callOllamaAI(title, selectedMode, title, price, guilt, fullImagePath);
 
@@ -227,6 +252,18 @@ router.get('/stats', auth, async (req, res) => {
     `, [userId]);
 
     const row = stats[0] || {};
+    res.json({
+      total_dilemmas: Number(row.total_dilemmas) || 0,
+      money_saved: Number(row.money_saved) || 0,
+      proud_count: Number(row.proud_count) || 0,
+      regret_count: Number(row.regret_count) || 0
+    });
+  } catch (error) {
+    console.error('Stats error:', error);
+    res.status(500).json({ message: 'ไม่สามารถดึงข้อมูลสถิติได้', error: error.message });
+  }
+});
+
 // DELETE /api/dilemmas/:id - ลบคดีความ (เฉพาะของตัวเอง)
 router.delete('/:id', auth, async (req, res) => {
   try {

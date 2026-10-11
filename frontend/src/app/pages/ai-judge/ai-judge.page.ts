@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef, NgZone } from '@angular/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
@@ -79,7 +79,9 @@ export class AiJudgePage {
     private haptics: HapticsService,
     private socialCard: SocialCardService,
     private loadingCtrl: LoadingController,
-    private toastCtrl: ToastController
+    private toastCtrl: ToastController,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {}
 
   // เลือกเคสตัวอย่างรวดเร็ว
@@ -89,6 +91,7 @@ export class AiJudgePage {
     this.price = c.price;
     this.selectedMode = c.mode;
     this.guiltLevel = c.guilt;
+    this.cdr.detectChanges();
     this.presentToast(`เลือกตัวอย่าง "${c.label}" แล้ว!`);
   }
 
@@ -119,7 +122,10 @@ export class AiJudgePage {
         source: CameraSource.Prompt
       });
 
-      this.photoDataUrl = image.dataUrl || null;
+      this.ngZone.run(() => {
+        this.photoDataUrl = image.dataUrl || null;
+        this.cdr.detectChanges();
+      });
 
       if (this.photoDataUrl) {
         const response = await fetch(this.photoDataUrl);
@@ -134,6 +140,7 @@ export class AiJudgePage {
     this.haptics.tick();
     this.photoDataUrl = null;
     this.selectedBlob = null;
+    this.cdr.detectChanges();
   }
 
   selectMode(modeId: string) {
@@ -152,16 +159,29 @@ export class AiJudgePage {
       return;
     }
 
+    // 🔒 ป้องกัน Double-click / Spam request เด็ดขาด
+    if (this.isJudging) {
+      return;
+    }
+    this.isJudging = true;
+    this.cdr.detectChanges();
+
     this.haptics.tick();
-    const loading = await this.loadingCtrl.create({
-      message: '⚖️ ท่านผู้พิพากษา AI กำลังเปิดแฟ้มคดีความ...',
-      spinner: 'bubbles'
-    });
-    await loading.present();
+    let loading: HTMLIonLoadingElement | null = null;
+    try {
+      loading = await this.loadingCtrl.create({
+        message: '⚖️ ท่านผู้พิพากษา AI กำลังเปิดแฟ้มคดีความ...',
+        spinner: 'bubbles',
+        duration: 10000
+      });
+      await loading.present();
+    } catch (e) {
+      console.warn('Loading modal error:', e);
+    }
 
     // 🔓 Guest Mode Fallback (ถ้ายังไม่ได้ล็อกอิน ให้ทดลองเล่นได้ทันที!)
     if (!this.authService.isLoggedIn()) {
-      setTimeout(() => {
+      setTimeout(async () => {
         const numPrice = this.price || 0;
         const foodCount = Math.round(numPrice / 60);
         const guestPool: any = {
@@ -184,24 +204,31 @@ export class AiJudgePage {
         };
 
         const chosen = guestPool[this.selectedMode] || guestPool.roast;
-        this.judgmentResult = {
-          id: null,
-          title: this.title.trim(),
-          price: numPrice,
-          mode: this.selectedMode,
-          isGuest: true,
-          food_equivalent: numPrice > 0 ? `เท่ากับข้าวกะเพราไข่ดาว ${foodCount} จาน 🍛` : null,
-          ai_verdict: chosen.ai_verdict,
-          ai_reason: chosen.ai_reason
-        };
+        if (loading) {
+          try { await loading.dismiss(); } catch (e) {}
+        }
 
-        loading.dismiss();
+        this.ngZone.run(() => {
+          this.judgmentResult = {
+            id: null,
+            title: this.title.trim(),
+            price: numPrice,
+            mode: this.selectedMode,
+            isGuest: true,
+            food_equivalent: numPrice > 0 ? `เท่ากับข้าวกะเพราไข่ดาว ${foodCount} จาน 🍛` : null,
+            ai_verdict: chosen.ai_verdict,
+            ai_reason: chosen.ai_reason
+          };
+          this.isJudging = false;
+          this.cdr.detectChanges();
+        });
+
         const isBuy = this.judgmentResult.ai_verdict === 'BUY';
         this.soundFx.playStamp(isBuy ? 'BUY' : 'BYE');
         this.haptics.heavyImpact();
         this.confetti.burst(isBuy ? 'gold' : 'danger');
         this.presentToast('ℹ️ โหมดทดลองเล่น: คดีนี้ไม่ถูกบันทึกในประวัติ');
-      }, 700);
+      }, 500);
       return;
     }
 
@@ -218,17 +245,31 @@ export class AiJudgePage {
     }
 
     this.apiService.judgeDilemma(formData).subscribe({
-      next: (res) => {
-        loading.dismiss();
-        this.judgmentResult = res;
+      next: async (res) => {
+        if (loading) {
+          try { await loading.dismiss(); } catch (e) {}
+        }
+
+        // ปลุก NgZone ทันทีเพื่อให้ Template สลับไปแสดงผลคำตัดสินใน 0ms
+        this.ngZone.run(() => {
+          this.judgmentResult = res;
+          this.isJudging = false;
+          this.cdr.detectChanges();
+        });
 
         const isBuy = res.ai_verdict === 'BUY';
         this.soundFx.playStamp(isBuy ? 'BUY' : 'BYE');
         this.haptics.heavyImpact();
         this.confetti.burst(isBuy ? 'gold' : 'danger');
       },
-      error: (err) => {
-        loading.dismiss();
+      error: async (err) => {
+        if (loading) {
+          try { await loading.dismiss(); } catch (e) {}
+        }
+        this.ngZone.run(() => {
+          this.isJudging = false;
+          this.cdr.detectChanges();
+        });
         console.error('Judge error:', err);
         this.presentToast('เกิดข้อผิดพลาดในการเรียก AI');
       }
@@ -239,6 +280,7 @@ export class AiJudgePage {
   async generateCard() {
     if (!this.judgmentResult) return;
     this.isGeneratingCard = true;
+    this.cdr.detectChanges();
     this.haptics.tick();
 
     try {
@@ -252,13 +294,19 @@ export class AiJudgePage {
         guiltLevel: this.guiltLevel
       });
 
-      this.generatedStoryCardUrl = cardDataUrl;
+      this.ngZone.run(() => {
+        this.generatedStoryCardUrl = cardDataUrl;
+        this.cdr.detectChanges();
+      });
       this.presentToast('🎉 สร้างบัตรคำพิพากษา Story 9:16 สำเร็จแล้ว!');
     } catch (e) {
       console.error('Generate card error:', e);
       this.presentToast('ไม่สามารถสร้างการ์ดรูปภาพได้');
     } finally {
-      this.isGeneratingCard = false;
+      this.ngZone.run(() => {
+        this.isGeneratingCard = false;
+        this.cdr.detectChanges();
+      });
     }
   }
 
@@ -282,7 +330,10 @@ export class AiJudgePage {
     this.haptics.tick();
     this.apiService.updateFeedback(this.judgmentResult.id, feedback).subscribe({
       next: () => {
-        this.judgmentResult.user_feedback = feedback;
+        this.ngZone.run(() => {
+          this.judgmentResult.user_feedback = feedback;
+          this.cdr.detectChanges();
+        });
         if (feedback === 'proud') {
           this.confetti.burst('gold');
           this.presentToast('บันทึกแล้ว: ดีใจที่เชื่อ AI!');
@@ -302,6 +353,8 @@ export class AiJudgePage {
     this.judgmentResult = null;
     this.generatedStoryCardUrl = null;
     this.guiltLevel = 75;
+    this.isJudging = false;
+    this.cdr.detectChanges();
   }
 
   async presentToast(message: string) {

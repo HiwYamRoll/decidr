@@ -108,16 +108,22 @@
           </div>
         </div>
 
-        <!-- ปุ่มส่งคำตัดสิน -->
+        <!-- ปุ่มส่งคำตัดสิน (พร้อมระบบป้องกัน Double-Click และ Loading Spinner ชัดเจน) -->
         <ion-button 
           expand="block" 
           shape="round" 
           size="large" 
           color="primary" 
           style="margin-top: 26px;"
+          [disabled]="isJudging"
           (click)="submitToJudge()">
-          <ion-icon slot="start" name="sparkles-outline"></ion-icon>
-          พิพากษาเดี๋ยวนี้! (Judge Me)
+          @if (isJudging) {
+            <ion-spinner name="crescent" slot="start" style="margin-right: 8px;"></ion-spinner>
+            กำลังเปิดแฟ้มคดี...
+          } @else {
+            <ion-icon slot="start" name="sparkles-outline"></ion-icon>
+            พิพากษาเดี๋ยวนี้! (Judge Me)
+          }
         </ion-button>
       </ion-card-content>
     </ion-card>
