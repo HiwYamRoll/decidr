@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
@@ -6,7 +6,7 @@ import { SoundFxService } from '../../services/sound-fx.service';
 import { ConfettiService } from '../../services/confetti.service';
 import { HapticsService } from '../../services/haptics.service';
 import { SocialCardService } from '../../services/social-card.service';
-import { LoadingController, ToastController, ModalController } from '@ionic/angular';
+import { LoadingController, ToastController } from '@ionic/angular';
 
 @Component({
   selector: 'app-ai-judge',
@@ -30,6 +30,15 @@ export class AiJudgePage {
   // บัตรคำพิพากษาสำหรับแชร์ลงโซเชียล
   generatedStoryCardUrl: string | null = null;
   isGeneratingCard = false;
+
+  // ตัวอย่างเคสยอดฮิตสำหรับคลิกเดียวเติมฟอร์ม (Quick Dilemmas)
+  quickCases = [
+    { label: '🧋 ชานมไข่มุก', title: 'ชานมไข่มุกหวาน 100% เพิ่มไข่มุก', price: 65, mode: 'roast', guilt: 65 },
+    { label: '👟 รองเท้าผ้าใบ', title: 'รองเท้าผ้าใบคู่นี้ Limited Edition', price: 3900, mode: 'roast', guilt: 90 },
+    { label: '🎮 เติมเกมกาชา', title: 'เติมเกมกาชาหาตัวละครใหม่ 10 โรล', price: 1200, mode: 'spoil', guilt: 85 },
+    { label: '🍲 บุฟเฟต์ชาบู', title: 'บุฟเฟต์ชาบูมื้อดึกกับเพื่อน', price: 799, mode: 'logic', guilt: 70 },
+    { label: '📱 เคสมือถือ', title: 'เคสมือถืออันที่สิบ ลายน่ารักมาก', price: 250, mode: 'fortune', guilt: 50 },
+  ];
 
   modes = [
     { 
@@ -72,6 +81,16 @@ export class AiJudgePage {
     private loadingCtrl: LoadingController,
     private toastCtrl: ToastController
   ) {}
+
+  // เลือกเคสตัวอย่างรวดเร็ว
+  applyQuickCase(c: any) {
+    this.haptics.tick();
+    this.title = c.title;
+    this.price = c.price;
+    this.selectedMode = c.mode;
+    this.guiltLevel = c.guilt;
+    this.presentToast(`เลือกตัวอย่าง "${c.label}" แล้ว!`);
+  }
 
   // คำอธิบายระดับกิเลสตาม Slider
   getGuiltText(val: number): string {
@@ -133,11 +152,6 @@ export class AiJudgePage {
       return;
     }
 
-    if (!this.authService.isLoggedIn()) {
-      this.presentToast('กรุณาเข้าสู่ระบบก่อน เพื่อบันทึกคำตัดสินลงประวัติ');
-      return;
-    }
-
     this.haptics.tick();
     const loading = await this.loadingCtrl.create({
       message: '⚖️ ท่านผู้พิพากษา AI กำลังเปิดแฟ้มคดีความ...',
@@ -145,6 +159,53 @@ export class AiJudgePage {
     });
     await loading.present();
 
+    // 🔓 Guest Mode Fallback (ถ้ายังไม่ได้ล็อกอิน ให้ทดลองเล่นได้ทันที!)
+    if (!this.authService.isLoggedIn()) {
+      setTimeout(() => {
+        const numPrice = this.price || 0;
+        const foodCount = Math.round(numPrice / 60);
+        const guestPool: any = {
+          roast: {
+            ai_verdict: 'BYE',
+            ai_reason: `(Roast AI) "${this.title.trim()}" ราคาตั้ง ${numPrice.toLocaleString()} บาท! เงินในบัญชียังมีไม่ถึงพันเลยมั้ง ซื้อไปสิ้นเดือนได้แทะแกลบแน่ บ๊ายบายไปซะ อย่าหาทำ!`
+          },
+          spoil: {
+            ai_verdict: 'BUY',
+            ai_reason: `(Spoil AI) จัดไปอย่าให้เสีย! เกิดมาชาติเดียว ชาติหน้าก็ไม่มีเงินให้ใช้แล้ว ซื้อความสุขให้ตัวเองโลดดด!`
+          },
+          logic: {
+            ai_verdict: numPrice > 500 ? 'BYE' : 'BUY',
+            ai_reason: `(Logic AI) จากการคำนวณความจำเป็นเทียบกับราคา ${numPrice.toLocaleString()} บาท แนะนำให้พักไว้ก่อน 24 ชม. เพื่อลด Impulse Buying`
+          },
+          fortune: {
+            ai_verdict: 'BUY',
+            ai_reason: `(Fortune AI) ไพ่ทาโรต์เปิดออกมาได้ The Sun! ชิ้นนี้มีรังสีนำโชค ซื้อแล้วชีวิตจะสดใสเฮงๆ!`
+          }
+        };
+
+        const chosen = guestPool[this.selectedMode] || guestPool.roast;
+        this.judgmentResult = {
+          id: null,
+          title: this.title.trim(),
+          price: numPrice,
+          mode: this.selectedMode,
+          isGuest: true,
+          food_equivalent: numPrice > 0 ? `เท่ากับข้าวกะเพราไข่ดาว ${foodCount} จาน 🍛` : null,
+          ai_verdict: chosen.ai_verdict,
+          ai_reason: chosen.ai_reason
+        };
+
+        loading.dismiss();
+        const isBuy = this.judgmentResult.ai_verdict === 'BUY';
+        this.soundFx.playStamp(isBuy ? 'BUY' : 'BYE');
+        this.haptics.heavyImpact();
+        this.confetti.burst(isBuy ? 'gold' : 'danger');
+        this.presentToast('ℹ️ โหมดทดลองเล่น: คดีนี้ไม่ถูกบันทึกในประวัติ');
+      }, 700);
+      return;
+    }
+
+    // กรณี Logged in -> ส่งบันทึกลง Backend REST API + MySQL
     const formData = new FormData();
     formData.append('title', this.title.trim());
     formData.append('mode', this.selectedMode);
@@ -161,7 +222,6 @@ export class AiJudgePage {
         loading.dismiss();
         this.judgmentResult = res;
 
-        // ไฮไลท์เสียงและเอฟเฟกต์ทันทีที่คำพิพากษาปรากฏ
         const isBuy = res.ai_verdict === 'BUY';
         this.soundFx.playStamp(isBuy ? 'BUY' : 'BYE');
         this.haptics.heavyImpact();
@@ -215,7 +275,10 @@ export class AiJudgePage {
 
   // ส่งฟีดแบ็ก (ภูมิใจ / เสียดาย)
   sendFeedback(feedback: 'proud' | 'regret') {
-    if (!this.judgmentResult?.id) return;
+    if (!this.judgmentResult?.id) {
+      this.presentToast('โหมดทดลองเล่น: เข้าสู่ระบบเพื่อบันทึกสถิติ');
+      return;
+    }
     this.haptics.tick();
     this.apiService.updateFeedback(this.judgmentResult.id, feedback).subscribe({
       next: () => {

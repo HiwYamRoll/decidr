@@ -227,15 +227,24 @@ router.get('/stats', auth, async (req, res) => {
     `, [userId]);
 
     const row = stats[0] || {};
-    res.json({
-      total_dilemmas: Number(row.total_dilemmas) || 0,
-      money_saved: Number(row.money_saved) || 0,
-      proud_count: Number(row.proud_count) || 0,
-      regret_count: Number(row.regret_count) || 0
-    });
+// DELETE /api/dilemmas/:id - ลบคดีความ (เฉพาะของตัวเอง)
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const dilemmaId = req.params.id;
+    const userId = req.user.id;
+
+    const [result] = await db.query(`
+      DELETE FROM dilemmas WHERE id = ? AND user_id = ?
+    `, [dilemmaId, userId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'ไม่พบคดีความที่ต้องการลบ' });
+    }
+
+    res.json({ message: 'ลบคดีความเรียบร้อยแล้ว' });
   } catch (error) {
-    console.error('Get stats error:', error);
-    res.status(500).json({ message: 'ไม่สามารถดึงสถิติได้', error: error.message });
+    console.error('Delete dilemma error:', error);
+    res.status(500).json({ message: 'ไม่สามารถลบคดีความได้', error: error.message });
   }
 });
 

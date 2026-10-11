@@ -351,16 +351,36 @@ export class WheelPage implements OnInit, AfterViewInit {
       header: '🎉 ได้อันนี้!',
       subHeader: this.wheelTitle,
       message: `👉  ${winner}  👈`,
-      buttons: [{
-        text: 'ตกลง',
-        role: 'cancel',
-        handler: () => {
-          this.ngZone.run(() => {
-            this.isSpinning = false;
-            this.cdr.detectChanges();
-          });
+      buttons: [
+        {
+          text: 'ตกลง',
+          role: 'cancel',
+          handler: () => {
+            this.ngZone.run(() => {
+              this.isSpinning = false;
+              this.cdr.detectChanges();
+            });
+          }
+        },
+        {
+          text: '🗑️ ลบตัวเลือกนี้ออก',
+          handler: () => {
+            this.ngZone.run(() => {
+              const idx = this.options.findIndex(o => o.label === winner);
+              if (idx !== -1 && this.options.length > 2) {
+                this.options.splice(idx, 1);
+                this.saveState();
+                this.drawWheel();
+                this.presentToast(`ลบ "${winner}" ออกจากวงล้อแล้ว`);
+              } else if (this.options.length <= 2) {
+                this.presentToast('วงล้อต้องมีอย่างน้อย 2 ตัวเลือกครับ');
+              }
+              this.isSpinning = false;
+              this.cdr.detectChanges();
+            });
+          }
         }
-      }]
+      ]
     });
 
     alert.onDidDismiss().then(() => {

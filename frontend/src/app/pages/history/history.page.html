@@ -13,6 +13,11 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="ion-padding history-content">
+  <!-- Pull to Refresh สไตล์ Mobile App -->
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <ion-refresher-content pullingIcon="chevron-down-circle-outline" pullingText="ดึงลงเพื่อรีเฟรช..." refreshingSpinner="bubbles" refreshingText="กำลังอัปเดตข้อมูล..."></ion-refresher-content>
+  </ion-refresher>
+
   @if (!authService.isLoggedIn()) {
     <ion-card class="ion-text-center" style="padding: 28px 16px; border-radius: 20px;">
       <ion-icon name="lock-closed-outline" style="font-size: 56px; color: #6366f1;"></ion-icon>
@@ -130,7 +135,7 @@
               <span style="font-size: 11px; color: #94a3b8;">
                 {{ d.created_at | date:'dd/MM/yyyy HH:mm' }}
               </span>
-              <div style="display: flex; gap: 6px;">
+              <div style="display: flex; gap: 6px; align-items: center;">
                 <ion-button 
                   size="small" 
                   [fill]="d.user_feedback === 'proud' ? 'solid' : 'outline'" 
@@ -144,6 +149,14 @@
                   color="danger" 
                   (click)="setFeedback(d, 'regret')">
                   👎 เสียดาย
+                </ion-button>
+                <ion-button 
+                  size="small" 
+                  fill="clear" 
+                  color="medium" 
+                  (click)="confirmDelete(d)"
+                  title="ลบคดีนี้">
+                  <ion-icon slot="icon-only" name="trash-outline" style="font-size: 18px;"></ion-icon>
                 </ion-button>
               </div>
             </div>

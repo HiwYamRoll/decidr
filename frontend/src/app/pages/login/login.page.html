@@ -88,6 +88,21 @@
           <ion-icon slot="start" [name]="mode === 'login' ? 'log-in-outline' : 'person-add-outline'"></ion-icon>
           {{ mode === 'login' ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก' }}
         </ion-button>
+
+        <div style="margin-top: 18px; text-align: center;">
+          <ion-button 
+            expand="block" 
+            shape="round" 
+            fill="outline" 
+            color="secondary" 
+            (click)="quickDemoLogin()">
+            <ion-icon slot="start" name="flash-outline"></ion-icon>
+            ⚡ เข้าสู่ระบบบัญชีตัวอย่าง (Demo 1-Click)
+          </ion-button>
+          <p style="font-size: 11px; color: #94a3b8; margin-top: 8px;">
+            * เหมาะสำหรับเดโมส่งอาจารย์ ไม่ต้องพิมพ์ Username/Password เอง
+          </p>
+        </div>
       </ion-card-content>
     </ion-card>
   }

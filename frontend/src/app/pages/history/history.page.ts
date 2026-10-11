@@ -157,6 +157,37 @@ export class HistoryPage implements OnInit {
     });
   }
 
+  handleRefresh(event: any) {
+    this.loadData();
+    setTimeout(() => {
+      event.target.complete();
+    }, 600);
+  }
+
+  async confirmDelete(dilemma: any) {
+    const alert = await this.alertCtrl.create({
+      header: '🗑️ ลบคดีความนี้?',
+      message: `คุณต้องการลบคดี "${dilemma.title}" ออกจากประวัติใช่หรือไม่?`,
+      buttons: [
+        { text: 'ยกเลิก', role: 'cancel' },
+        {
+          text: 'ลบทิ้ง',
+          role: 'destructive',
+          handler: () => {
+            this.apiService.deleteDilemma(dilemma.id).subscribe({
+              next: () => {
+                this.presentToast('ลบคดีความเรียบร้อย');
+                this.loadData();
+              },
+              error: () => this.presentToast('ไม่สามารถลบคดีได้')
+            });
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
   async presentToast(message: string) {
     const toast = await this.toastCtrl.create({
       message,

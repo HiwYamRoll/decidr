@@ -9,10 +9,10 @@ import { AuthService } from './services/auth.service';
 })
 export class AppComponent implements OnInit {
   protected readonly appPages = [
-    { title: '🎡 วงล้อสุ่ม (Spin Wheel)', url: '/wheel', icon: 'disc' },
-    { title: '⚖️ ผู้พิพากษา AI (Buy or Bye)', url: '/ai-judge', icon: 'camera' },
-    { title: '📜 ประวัติ & สถิติเซฟเงิน', url: '/history', icon: 'stats-chart' },
-    { title: '👤 เข้าสู่ระบบ / บัญชี', url: '/login', icon: 'person-circle' },
+    { title: '🎡 วงล้อสุ่ม (Spin Wheel)', shortTitle: 'วงล้อสุ่ม', url: '/wheel', icon: 'disc' },
+    { title: '⚖️ ผู้พิพากษา AI (Buy or Bye)', shortTitle: 'AI ตัดสิน', url: '/ai-judge', icon: 'sparkles' },
+    { title: '📜 ประวัติ & กระปุกออมสิน', shortTitle: 'กระปุกออม', url: '/history', icon: 'stats-chart' },
+    { title: '👤 เข้าสู่ระบบ / บัญชี', shortTitle: 'โปรไฟล์', url: '/login', icon: 'person' },
   ];
 
   currentUser: any = null;

@@ -10,6 +10,19 @@
 <ion-content [fullscreen]="true" class="ion-padding ai-judge-content">
   <!-- ถ้ายังไม่มีผลลัพธ์ ให้แสดงฟอร์มกรอก -->
   @if (!judgmentResult) {
+
+    <!-- 0. ชิปตัวอย่างเคสยอดฮิต (Quick Dilemma Chips) -->
+    <div class="quick-cases-box animate-fade">
+      <span class="quick-title">⚡ ตัวอย่างเคสยอดฮิต (กดปุ๊บเติมฟอร์มปั๊บ):</span>
+      <div class="chips-scroll">
+        @for (c of quickCases; track c.title) {
+          <ion-chip color="secondary" (click)="applyQuickCase(c)" class="quick-chip">
+            <ion-label>{{ c.label }} ({{ c.price }} ฿)</ion-label>
+          </ion-chip>
+        }
+      </div>
+    </div>
+
     <!-- 1. ถ่ายรูปของที่อยากได้ (Capacitor Camera) -->
     <div class="photo-box" (click)="takePhoto()">
       @if (photoDataUrl) {
@@ -112,6 +125,13 @@
     <!-- ผลคำพิพากษาจาก AI -->
     <ion-card class="verdict-card animate-pop">
       <ion-card-content class="ion-text-center">
+
+        @if (judgmentResult.isGuest) {
+          <div class="guest-notice-bar">
+            ℹ️ โหมดทดลองเล่น: คดีนี้ไม่ถูกบันทึก <a routerLink="/login" style="color: #6366f1; font-weight: 700;">เข้าสู่ระบบ</a> เพื่อเก็บสถิติ
+          </div>
+        }
+
         <!-- สแตมป์คำตัดสิน BUY หรือ BYE ตัวยักษ์ -->
         <div class="stamp animate-stamp" [class.stamp-buy]="judgmentResult.ai_verdict === 'BUY'" [class.stamp-bye]="judgmentResult.ai_verdict !== 'BUY'">
           {{ judgmentResult.ai_verdict }}

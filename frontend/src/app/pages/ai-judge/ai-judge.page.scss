@@ -2,6 +2,52 @@
   --background: #f8fafc;
 }
 
+/* Quick Dilemma Chips */
+.quick-cases-box {
+  margin-bottom: 14px;
+  background: #ffffff;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  .quick-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .chips-scroll {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+
+    .quick-chip {
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 0;
+      flex-shrink: 0;
+    }
+  }
+}
+
+.guest-notice-bar {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
 .photo-box {
   width: 100%;
   height: 200px;

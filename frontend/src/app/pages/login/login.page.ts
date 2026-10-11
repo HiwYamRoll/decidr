@@ -73,6 +73,36 @@ export class LoginPage implements OnInit {
     }
   }
 
+  async quickDemoLogin() {
+    const loading = await this.loadingCtrl.create({
+      message: '⚡ กำลังเข้าสู่ระบบบัญชีตัวอย่าง...',
+      spinner: 'crescent'
+    });
+    await loading.present();
+
+    const demoCreds = { username: 'demo_student', password: 'password123' };
+    this.authService.login(demoCreds).subscribe({
+      next: (res) => {
+        loading.dismiss();
+        this.presentToast(`ยินดีต้อนรับ ${res.user.username}!`);
+        this.router.navigate(['/history']);
+      },
+      error: () => {
+        this.authService.register(demoCreds).subscribe({
+          next: (regRes) => {
+            loading.dismiss();
+            this.presentToast(`สร้างและเข้าสู่ระบบ ${regRes.user.username} สำเร็จ!`);
+            this.router.navigate(['/history']);
+          },
+          error: () => {
+            loading.dismiss();
+            this.presentToast('ไม่สามารถเข้าสู่ระบบตัวอย่างได้');
+          }
+        });
+      }
+    });
+  }
+
   logout() {
     this.authService.logout();
     this.presentToast('ออกจากระบบเรียบร้อย');

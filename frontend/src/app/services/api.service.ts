@@ -70,4 +70,10 @@ export class ApiService {
       headers: this.getHeaders()
     });
   }
+
+  deleteDilemma(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/dilemmas/${id}`, {
+      headers: this.getHeaders()
+    });
+  }
 }

@@ -42,4 +42,9 @@
 
 body {
   font-family: 'Kanit', sans-serif;
+  background: #0f172a;
+}
+
+ion-content {
+  --padding-bottom: 74px !important;
 }
