@@ -1,0 +1,200 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>⚖️ ผู้พิพากษา AI (Buy or Bye)</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding ai-judge-content">
+  <!-- ถ้ายังไม่มีผลลัพธ์ ให้แสดงฟอร์มกรอก -->
+  @if (!judgmentResult) {
+    <!-- 1. ถ่ายรูปของที่อยากได้ (Capacitor Camera) -->
+    <div class="photo-box" (click)="takePhoto()">
+      @if (photoDataUrl) {
+        <img [src]="photoDataUrl" alt="Snap Preview" class="preview-img" />
+        <ion-button fill="clear" color="danger" class="btn-remove-photo" (click)="$event.stopPropagation(); removePhoto()">
+          <ion-icon slot="icon-only" name="close-circle"></ion-icon>
+        </ion-button>
+      } @else {
+        <div class="photo-placeholder">
+          <ion-icon name="camera-outline" class="cam-icon"></ion-icon>
+          <p>แตะตรงนี้เพื่อ <strong>ถ่ายรูปของ / ป้ายราคา</strong> (Camera Snap)</p>
+          <span class="photo-hint">* ไม่ถ่ายรูปก็ตัดสินได้ แต่มีรูปจะแซ่บขึ้น!</span>
+        </div>
+      }
+    </div>
+
+    <!-- 2. ฟอร์มกรอกข้อมูลการพิจารณาคดี -->
+    <ion-card class="form-card">
+      <ion-card-content>
+        <ion-item lines="full">
+          <ion-icon slot="start" name="help-buoy-outline" color="primary"></ion-icon>
+          <ion-label position="stacked">เรื่องที่กำลังลังเลใจ / ของที่อยากได้ *</ion-label>
+          <ion-input 
+            placeholder="เช่น รองเท้าผ้าใบคู่นี้ 2,590 บาท ควรซื้อไหม?" 
+            [(ngModel)]="title">
+          </ion-input>
+        </ion-item>
+
+        <ion-item lines="full" style="margin-top: 10px;">
+          <ion-icon slot="start" name="cash-outline" color="success"></ion-icon>
+          <ion-label position="stacked">ราคา (บาท)</ion-label>
+          <ion-input 
+            type="number" 
+            placeholder="เช่น 2590" 
+            [(ngModel)]="price">
+          </ion-input>
+        </ion-item>
+
+        <!-- แสดงตัวแปลงค่าเป็นของกินแบบกวนๆ ทันทีที่กรอกราคา -->
+        @if (price && price > 0) {
+          <div class="food-badge animate-fade">
+            {{ getFoodEquivalent() }}
+          </div>
+        }
+
+        <!-- 3. เกจวัดระดับความหน้ามืดตามัว / กิเลสในใจ (1 - 100%) -->
+        <div class="guilt-meter-box">
+          <div class="guilt-header">
+            <span>🔥 ระดับความอยากได้ในใจ:</span>
+            <span class="guilt-val">{{ guiltLevel }}%</span>
+          </div>
+          <ion-range 
+            [min]="1" 
+            [max]="100" 
+            [step]="1" 
+            [(ngModel)]="guiltLevel" 
+            color="danger"
+            [pin]="true">
+            <ion-icon slot="start" name="snow-outline" color="medium"></ion-icon>
+            <ion-icon slot="end" name="flame" color="danger"></ion-icon>
+          </ion-range>
+          <div class="guilt-status-text">
+            {{ getGuiltText(guiltLevel) }}
+          </div>
+        </div>
+
+        <!-- 4. เลือกบุคลิกของ AI ผู้พิพากษา -->
+        <div style="margin-top: 20px;">
+          <ion-label style="font-weight: 700; font-size: 14px; color: #4b5563;">
+            🎭 เลือกบุคลิกผู้พิพากษา AI:
+          </ion-label>
+          <div class="mode-grid">
+            @for (m of modes; track m.id) {
+              <div 
+                class="mode-card" 
+                [class.selected]="selectedMode === m.id" 
+                (click)="selectMode(m.id)">
+                <div class="mode-avatar">{{ m.avatar }}</div>
+                <div class="mode-title">{{ m.name }}</div>
+                <div class="mode-desc">{{ m.desc }}</div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- ปุ่มส่งคำตัดสิน -->
+        <ion-button 
+          expand="block" 
+          shape="round" 
+          size="large" 
+          color="primary" 
+          style="margin-top: 26px;"
+          (click)="submitToJudge()">
+          <ion-icon slot="start" name="sparkles-outline"></ion-icon>
+          พิพากษาเดี๋ยวนี้! (Judge Me)
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  } @else {
+    <!-- ผลคำพิพากษาจาก AI -->
+    <ion-card class="verdict-card animate-pop">
+      <ion-card-content class="ion-text-center">
+        <!-- สแตมป์คำตัดสิน BUY หรือ BYE ตัวยักษ์ -->
+        <div class="stamp animate-stamp" [class.stamp-buy]="judgmentResult.ai_verdict === 'BUY'" [class.stamp-bye]="judgmentResult.ai_verdict !== 'BUY'">
+          {{ judgmentResult.ai_verdict }}
+        </div>
+
+        @if (judgmentResult.image_path) {
+          <div style="margin: 15px 0;">
+            <img [src]="'http://localhost:5000' + judgmentResult.image_path" class="verdict-img" />
+          </div>
+        }
+
+        <h2 style="font-weight: 800; margin: 12px 0 6px 0;">"{{ judgmentResult.title }}"</h2>
+        @if (judgmentResult.price) {
+          <p style="color: #6b7280; margin: 0 0 10px 0; font-weight: 600;">
+            ราคา: {{ judgmentResult.price.toLocaleString() }} บาท
+          </p>
+          @if (judgmentResult.food_equivalent) {
+            <span class="food-badge" style="display: inline-block; margin-bottom: 14px;">
+              {{ judgmentResult.food_equivalent }}
+            </span>
+          }
+        }
+
+        <!-- คำให้การและเหตุผลของ AI -->
+        <div class="ai-speech-bubble">
+          <div class="speech-header">
+            <ion-icon name="chatbubble-ellipses-outline"></ion-icon> 
+            คำตัดสินจากผู้พิพากษา ({{ judgmentResult.mode.toUpperCase() }} MODE):
+          </div>
+          <p class="speech-text">{{ judgmentResult.ai_reason }}</p>
+        </div>
+
+        <!-- ฟีดแบ็กผลลัพธ์ -->
+        <div style="margin-top: 20px;">
+          <p style="font-size: 13px; color: #6b7280; font-weight: 500;">บันทึกความรู้สึกหลังจากผ่านไป:</p>
+          <div style="display: flex; gap: 8px; justify-content: center;">
+            <ion-button 
+              size="small" 
+              [color]="judgmentResult.user_feedback === 'proud' ? 'success' : 'medium'"
+              [fill]="judgmentResult.user_feedback === 'proud' ? 'solid' : 'outline'"
+              (click)="sendFeedback('proud')">
+              👍 ภูมิใจที่เชื่อ AI
+            </ion-button>
+            <ion-button 
+              size="small" 
+              [color]="judgmentResult.user_feedback === 'regret' ? 'danger' : 'medium'"
+              [fill]="judgmentResult.user_feedback === 'regret' ? 'solid' : 'outline'"
+              (click)="sendFeedback('regret')">
+              👎 แอบเสียดาย
+            </ion-button>
+          </div>
+        </div>
+
+        <!-- ปุ่มสร้างบัตรคำพิพากษาลง Social Story (Viral Feature) -->
+        <div style="margin-top: 24px;">
+          <ion-button 
+            expand="block" 
+            shape="round" 
+            color="secondary" 
+            (click)="generateCard()"
+            [disabled]="isGeneratingCard">
+            <ion-icon slot="start" name="share-social-outline"></ion-icon>
+            {{ isGeneratingCard ? 'กำลังสร้างการ์ด...' : '📸 ออกบัตรคำพิพากษาแชร์ลง Story (9:16)' }}
+          </ion-button>
+        </div>
+
+        <!-- พรีวิวการ์ดสตอรี่เมื่อกดสร้าง -->
+        @if (generatedStoryCardUrl) {
+          <div class="story-preview-container animate-fade">
+            <div class="story-tag">✨ บัตรคำพิพากษาพร้อมแชร์ลง Instagram / TikTok Story</div>
+            <img [src]="generatedStoryCardUrl" alt="Story Preview" class="story-card-img" />
+            <ion-button expand="block" color="tertiary" shape="round" style="margin-top: 10px;" (click)="downloadCard()">
+              <ion-icon slot="start" name="download-outline"></ion-icon>
+              ดาวน์โหลดรูปลงเครื่อง (Save Image)
+            </ion-button>
+          </div>
+        }
+
+        <ion-button expand="block" fill="outline" color="dark" style="margin-top: 20px;" (click)="resetForm()">
+          <ion-icon slot="start" name="arrow-undo-outline"></ion-icon>
+          ส่งเรื่องใหม่
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  }
+</ion-content>

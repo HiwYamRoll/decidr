@@ -1,0 +1,42 @@
+<ion-app>
+  <ion-split-pane contentId="main-content">
+    <ion-menu contentId="main-content" type="overlay">
+      <ion-content>
+        <div style="padding: 24px 16px 12px 16px; background: linear-gradient(135deg, #6366f1, #a855f7); color: white;">
+          <h2 style="margin: 0; font-weight: 800; font-size: 22px;">🎯 Decidr</h2>
+          <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">แอปช่วยตัดสินใจชีวิต & AI Judge</p>
+          <div style="margin-top: 12px; font-size: 12px; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; display: inline-block;">
+            @if (currentUser) {
+              <span>👤 ผู้ใช้: <strong>{{ currentUser.username }}</strong></span>
+            } @else {
+              <span>👤 ยังไม่ได้เข้าสู่ระบบ (โหมดทดลอง)</span>
+            }
+          </div>
+        </div>
+
+        <ion-list id="inbox-list">
+          <ion-list-header style="font-size: 14px; text-transform: uppercase; color: #6b7280;">เมนูหลัก</ion-list-header>
+
+          @for (p of appPages; track p; let i = $index) {
+            <ion-menu-toggle auto-hide="false">
+              <ion-item routerDirection="root" [routerLink]="[p.url]" lines="none" detail="false" routerLinkActive="selected">
+                <ion-icon aria-hidden="true" slot="start" [ios]="p.icon + '-outline'" [md]="p.icon + '-sharp'"></ion-icon>
+                <ion-label style="font-weight: 500;">{{ p.title }}</ion-label>
+              </ion-item>
+            </ion-menu-toggle>
+          }
+        </ion-list>
+
+        @if (currentUser) {
+          <div style="padding: 16px;">
+            <ion-button expand="block" color="danger" fill="outline" size="small" (click)="logout()">
+              <ion-icon slot="start" name="log-out-outline"></ion-icon>
+              ออกจากระบบ
+            </ion-button>
+          </div>
+        }
+      </ion-content>
+    </ion-menu>
+    <ion-router-outlet id="main-content"></ion-router-outlet>
+  </ion-split-pane>
+</ion-app>

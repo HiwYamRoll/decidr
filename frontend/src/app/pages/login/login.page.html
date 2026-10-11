@@ -1,0 +1,94 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>👤 บัญชีผู้ใช้ (JWT Auth)</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  @if (currentUser) {
+    <!-- ข้อมูลโปรไฟล์เมื่อเข้าสู่ระบบแล้ว -->
+    <ion-card class="ion-text-center" style="padding: 24px 16px; border-radius: 16px;">
+      <ion-avatar style="width: 80px; height: 80px; margin: 0 auto 16px auto; background: #6366f1; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: 800;">
+        {{ currentUser.username.charAt(0).toUpperCase() }}
+      </ion-avatar>
+      <h2>{{ currentUser.username }}</h2>
+      <p style="color: #10b981; font-weight: 600; font-size: 13px;">● เข้าสู่ระบบแล้ว (Active Session)</p>
+      
+      <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 10px;">
+        <ion-button routerLink="/wheel" expand="block" shape="round" color="primary">
+          <ion-icon slot="start" name="disc-outline"></ion-icon> ไปหมุนวงล้อ
+        </ion-button>
+        <ion-button routerLink="/history" expand="block" shape="round" fill="outline" color="primary">
+          <ion-icon slot="start" name="stats-chart-outline"></ion-icon> ดูประวัติของฉัน
+        </ion-button>
+        <ion-button (click)="logout()" expand="block" shape="round" color="danger" fill="clear">
+          <ion-icon slot="start" name="log-out-outline"></ion-icon> ออกจากระบบ
+        </ion-button>
+      </div>
+    </ion-card>
+  } @else {
+    <!-- ฟอร์ม Login / Register -->
+    <ion-card style="border-radius: 16px; padding-bottom: 12px;">
+      <ion-card-header>
+        <ion-segment [(ngModel)]="mode" color="primary">
+          <ion-segment-button value="login">
+            <ion-label style="font-weight: 600;">เข้าสู่ระบบ</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="register">
+            <ion-label style="font-weight: 600;">สมัครสมาชิก</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </ion-card-header>
+
+      <ion-card-content>
+        <ion-item lines="full">
+          <ion-icon slot="start" name="person-outline" color="medium"></ion-icon>
+          <ion-input 
+            label="ชื่อผู้ใช้ (Username)" 
+            labelPlacement="floating" 
+            [(ngModel)]="username" 
+            placeholder="กรอกชื่อผู้ใช้">
+          </ion-input>
+        </ion-item>
+
+        <ion-item lines="full" style="margin-top: 10px;">
+          <ion-icon slot="start" name="lock-closed-outline" color="medium"></ion-icon>
+          <ion-input 
+            type="password" 
+            label="รหัสผ่าน (Password)" 
+            labelPlacement="floating" 
+            [(ngModel)]="password" 
+            placeholder="กรอกรหัสผ่าน">
+          </ion-input>
+        </ion-item>
+
+        @if (mode === 'register') {
+          <ion-item lines="full" style="margin-top: 10px;">
+            <ion-icon slot="start" name="checkmark-circle-outline" color="medium"></ion-icon>
+            <ion-input 
+              type="password" 
+              label="ยืนยันรหัสผ่าน" 
+              labelPlacement="floating" 
+              [(ngModel)]="confirmPassword" 
+              placeholder="ยืนยันรหัสผ่านอีกครั้ง">
+            </ion-input>
+          </ion-item>
+        }
+
+        <ion-button 
+          expand="block" 
+          shape="round" 
+          size="large" 
+          color="primary" 
+          style="margin-top: 24px;" 
+          (click)="submit()">
+          <ion-icon slot="start" [name]="mode === 'login' ? 'log-in-outline' : 'person-add-outline'"></ion-icon>
+          {{ mode === 'login' ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก' }}
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  }
+</ion-content>

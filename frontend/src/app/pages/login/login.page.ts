@@ -1,0 +1,89 @@
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
+import { ToastController, LoadingController } from '@ionic/angular';
+
+@Component({
+  selector: 'app-login',
+  templateUrl: './login.page.html',
+  styleUrls: ['./login.page.scss'],
+  standalone: false
+})
+export class LoginPage implements OnInit {
+  mode: 'login' | 'register' = 'login';
+  username = '';
+  password = '';
+  confirmPassword = '';
+  currentUser: any = null;
+
+  constructor(
+    public authService: AuthService,
+    private router: Router,
+    private toastCtrl: ToastController,
+    private loadingCtrl: LoadingController
+  ) {}
+
+  ngOnInit() {
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+    });
+  }
+
+  async submit() {
+    if (!this.username.trim() || !this.password) {
+      this.presentToast('กรุณากรอก Username และ Password');
+      return;
+    }
+
+    if (this.mode === 'register' && this.password !== this.confirmPassword) {
+      this.presentToast('รหัสผ่านทั้งสองช่องไม่ตรงกัน');
+      return;
+    }
+
+    const loading = await this.loadingCtrl.create({
+      message: this.mode === 'login' ? 'กำลังเข้าสู่ระบบ...' : 'กำลังสมัครสมาชิก...',
+      spinner: 'crescent'
+    });
+    await loading.present();
+
+    if (this.mode === 'login') {
+      this.authService.login({ username: this.username.trim(), password: this.password }).subscribe({
+        next: (res) => {
+          loading.dismiss();
+          this.presentToast(`ยินดีต้อนรับ ${res.user.username}!`);
+          this.router.navigate(['/wheel']);
+        },
+        error: (err) => {
+          loading.dismiss();
+          this.presentToast(err.error?.message || 'เข้าสู่ระบบไม่สำเร็จ');
+        }
+      });
+    } else {
+      this.authService.register({ username: this.username.trim(), password: this.password }).subscribe({
+        next: (res) => {
+          loading.dismiss();
+          this.presentToast('สมัครสมาชิกสำเร็จแล้ว!');
+          this.router.navigate(['/wheel']);
+        },
+        error: (err) => {
+          loading.dismiss();
+          this.presentToast(err.error?.message || 'สมัครสมาชิกไม่สำเร็จ');
+        }
+      });
+    }
+  }
+
+  logout() {
+    this.authService.logout();
+    this.presentToast('ออกจากระบบเรียบร้อย');
+  }
+
+  async presentToast(message: string) {
+    const toast = await this.toastCtrl.create({
+      message,
+      duration: 2500,
+      position: 'bottom'
+    });
+    toast.present();
+  }
+}

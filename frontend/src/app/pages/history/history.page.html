@@ -1,0 +1,155 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>📜 ประวัติ & กระปุกออมสิน AI</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="loadData()" title="รีเฟรช">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding history-content">
+  @if (!authService.isLoggedIn()) {
+    <ion-card class="ion-text-center" style="padding: 28px 16px; border-radius: 20px;">
+      <ion-icon name="lock-closed-outline" style="font-size: 56px; color: #6366f1;"></ion-icon>
+      <h2>กรุณาเข้าสู่ระบบ</h2>
+      <p style="color: #6b7280; font-size: 14px;">เข้าสู่ระบบเพื่อดูประวัติการตัดสินใจและกระปุกออมสินเงินที่คุณเซฟได้</p>
+      <ion-button routerLink="/login" shape="round" color="primary" style="margin-top: 14px;">
+        ไปหน้าเข้าสู่ระบบ
+      </ion-button>
+    </ion-card>
+  } @else {
+
+    <!-- 1. กระปุกออมสินเสมือนจริง (Piggy Bank Milestone) -->
+    <ion-card class="piggy-card animate-fade">
+      <ion-card-content>
+        <div class="piggy-header">
+          <div class="piggy-title-group">
+            <span class="piggy-icon">🐷</span>
+            <div>
+              <h3 class="goal-name">{{ goalName }}</h3>
+              <p class="goal-sub">เป้าหมาย: {{ goalAmount | number }} บาท</p>
+            </div>
+          </div>
+          <ion-button fill="clear" size="small" color="light" (click)="editGoal()">
+            <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+          </ion-button>
+        </div>
+
+        <!-- หลอด Progress Bar -->
+        <div class="progress-track">
+          <div class="progress-fill" [style.width.%]="progressPercent"></div>
+        </div>
+
+        <div class="progress-meta">
+          <span>เซฟได้แล้ว: <strong>{{ stats.money_saved | number }} ฿</strong></span>
+          <span class="percent-badge">{{ progressPercent }}%</span>
+        </div>
+
+        <div class="food-equivalent-bar">
+          🍛 เงินที่ประหยัดได้ ซื้อข้าวกะเพรากินได้ถึง <strong>{{ kapraoCount }} จาน</strong> แล้วนะ!
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- 2. กล่องสถิติภาพรวม 4 มิติ -->
+    <div class="stats-grid">
+      <div class="stat-card stat-money">
+        <div class="stat-num">{{ stats.money_saved | number }} ฿</div>
+        <div class="stat-label">💰 เงินที่เซฟจาก AI</div>
+      </div>
+      <div class="stat-card stat-total">
+        <div class="stat-num">{{ stats.total_dilemmas }}</div>
+        <div class="stat-label">⚖️ คดีที่ขึ้นศาล</div>
+      </div>
+      <div class="stat-card stat-proud">
+        <div class="stat-num">{{ stats.proud_count }}</div>
+        <div class="stat-label">👍 เชื่อแล้วรอด</div>
+      </div>
+      <div class="stat-card stat-regret">
+        <div class="stat-num">{{ stats.regret_count }}</div>
+        <div class="stat-label">👎 แอบเสียดาย</div>
+      </div>
+    </div>
+
+    <!-- 3. แท็บกรองประเภทผลการตัดสิน (All / BUY / BYE) -->
+    <div style="margin: 22px 0 12px 0;">
+      <ion-segment [(ngModel)]="filterVerdict" color="primary">
+        <ion-segment-button value="all">
+          <ion-label style="font-weight: 600;">ทั้งหมด ({{ dilemmas.length }})</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="BUY">
+          <ion-label style="font-weight: 600; color: #10b981;">🟢 BUY</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="BYE">
+          <ion-label style="font-weight: 600; color: #ef4444;">🔴 BYE</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+    </div>
+
+    <!-- 4. รายการประวัติ -->
+    @if (isLoading) {
+      <div class="ion-text-center" style="padding: 24px;">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+    } @else if (filteredDilemmas.length === 0) {
+      <ion-card class="ion-text-center" style="padding: 24px; border-radius: 16px;">
+        <p style="color: #6b7280;">ไม่พบคดีความในหมวดนี้ ลองส่งเรื่องให้ AI ตัดสินดูสิ!</p>
+        <ion-button routerLink="/ai-judge" shape="round" size="small">ไปหน้า AI ผู้พิพากษา</ion-button>
+      </ion-card>
+    } @else {
+      @for (d of filteredDilemmas; track d.id) {
+        <ion-card class="history-card animate-fade">
+          <ion-item lines="none">
+            @if (d.image_path) {
+              <ion-thumbnail slot="start">
+                <img [src]="'http://localhost:5000' + d.image_path" style="border-radius: 10px;" />
+              </ion-thumbnail>
+            }
+            <ion-label>
+              <h2 style="font-weight: 700; font-size: 15px;">{{ d.title }}</h2>
+              <p style="font-size: 12px; color: #64748b;">
+                🎭 โหมด: {{ d.mode.toUpperCase() }} | 💸 {{ d.price ? (d.price | number) + ' ฿' : 'ไม่ระบุราคา' }}
+              </p>
+            </ion-label>
+            <ion-badge slot="end" [color]="d.ai_verdict === 'BUY' ? 'success' : 'danger'" style="font-size: 14px; padding: 6px 12px; border-radius: 8px;">
+              {{ d.ai_verdict }}
+            </ion-badge>
+          </ion-item>
+
+          <ion-card-content style="padding-top: 2px;">
+            <p class="history-reason-box">
+              {{ d.ai_reason }}
+            </p>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+              <span style="font-size: 11px; color: #94a3b8;">
+                {{ d.created_at | date:'dd/MM/yyyy HH:mm' }}
+              </span>
+              <div style="display: flex; gap: 6px;">
+                <ion-button 
+                  size="small" 
+                  [fill]="d.user_feedback === 'proud' ? 'solid' : 'outline'" 
+                  color="success" 
+                  (click)="setFeedback(d, 'proud')">
+                  👍 ภูมิใจ
+                </ion-button>
+                <ion-button 
+                  size="small" 
+                  [fill]="d.user_feedback === 'regret' ? 'solid' : 'outline'" 
+                  color="danger" 
+                  (click)="setFeedback(d, 'regret')">
+                  👎 เสียดาย
+                </ion-button>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      }
+    }
+  }
+</ion-content>

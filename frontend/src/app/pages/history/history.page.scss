@@ -1,0 +1,162 @@
+.history-content {
+  --background: #f8fafc;
+}
+
+/* Piggy Bank Milestone Card */
+.piggy-card {
+  margin: 0 0 16px 0;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+  color: white;
+  box-shadow: 0 10px 25px rgba(236, 72, 153, 0.25);
+
+  .piggy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .piggy-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .piggy-icon {
+        font-size: 34px;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+      }
+
+      .goal-name {
+        margin: 0;
+        font-weight: 800;
+        font-size: 17px;
+      }
+
+      .goal-sub {
+        margin: 2px 0 0 0;
+        font-size: 12px;
+        opacity: 0.85;
+      }
+    }
+  }
+
+  .progress-track {
+    width: 100%;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    margin: 14px 0 8px 0;
+    overflow: hidden;
+
+    .progress-fill {
+      height: 100%;
+      background: #fbbf24;
+      border-radius: 10px;
+      transition: width 0.5s ease;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+    }
+  }
+
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    align-items: center;
+
+    .percent-badge {
+      background: rgba(255, 255, 255, 0.25);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+  }
+
+  .food-equivalent-bar {
+    margin-top: 12px;
+    background: rgba(0, 0, 0, 0.15);
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.stat-card {
+  padding: 16px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+
+  .stat-num {
+    font-size: 24px;
+    font-weight: 800;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    margin-top: 4px;
+    opacity: 0.9;
+  }
+
+  &.stat-money {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    grid-column: span 2;
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25);
+
+    .stat-num {
+      font-size: 32px;
+    }
+  }
+
+  &.stat-total {
+    background: #ffffff;
+    color: #1e293b;
+    border: 1px solid #e2e8f0;
+  }
+
+  &.stat-proud {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+  }
+
+  &.stat-regret {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+  }
+}
+
+.history-card {
+  margin: 0 0 12px 0;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+
+  .history-reason-box {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #334155;
+    background: #f8fafc;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border-left: 3px solid #6366f1;
+    margin: 4px 0 8px 0;
+  }
+}
+
+.animate-fade {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -1,0 +1,122 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>🎡 วงล้อตัดสินใจ (Spin Wheel)</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="resetToDefault()" title="รีเซ็ต">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding wheel-page-content">
+
+  <!-- 1. การ์ดใส่ชื่อหัวข้อที่กำลังตัดสินใจ (ปรับเปลี่ยนชื่อได้อิสระ) -->
+  <ion-card class="topic-card">
+    <ion-card-content>
+      <ion-item lines="none" class="topic-input-item">
+        <ion-icon name="help-circle-outline" slot="start" color="primary"></ion-icon>
+        <ion-input 
+          label="เรื่องที่กำลังตัดสินใจ:" 
+          labelPlacement="stacked"
+          [(ngModel)]="wheelTitle" 
+          (ionChange)="saveState()"
+          placeholder="พิมพ์เรื่องที่กำลังตัดสินใจ เช่น มื้อนี้กินอะไรดี?">
+        </ion-input>
+      </ion-item>
+
+      <!-- ชิปหัวข้อสำเร็จรูปด่วน (Quick Fun Presets) -->
+      <div class="preset-chips">
+        <span class="preset-label">💡 สลับหัวข้อด่วน:</span>
+        <div class="chips-scroll">
+          @for (p of funPresets; track p.title) {
+            <ion-chip 
+              [color]="wheelTitle === p.title ? 'primary' : 'medium'" 
+              (click)="applyPreset(p)"
+              class="custom-chip">
+              <ion-label>{{ p.title }}</ion-label>
+            </ion-chip>
+          }
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- แสดงผลลัพธ์คำตัดสิน (อยู่ด้านบนสุด เด่นชัดในสายตาทันที) -->
+  @if (spinResult) {
+    <ion-card class="winner-banner animate-bounce">
+      <ion-card-content class="ion-text-center">
+        <div class="winner-tag">✨ ผลการสุ่มได้แก่</div>
+        <h1 class="winner-title">{{ spinResult }}</h1>
+        <p class="winner-sub">เรื่อง "{{ wheelTitle }}" สรุปตามนี้เลย!</p>
+      </ion-card-content>
+    </ion-card>
+  }
+
+  <!-- 2. วงล้อสุ่ม และ เข็มชี้ความแม่นยำสูง -->
+  <div class="wheel-stage">
+    <div class="needle-indicator">
+      <div class="needle-shape"></div>
+    </div>
+    <div class="canvas-wrapper">
+      <canvas #wheelCanvas></canvas>
+    </div>
+  </div>
+
+  <!-- 3. ปุ่มกดหมุนวงล้อ -->
+  <div class="spin-action ion-text-center">
+    <ion-button 
+      expand="block" 
+      shape="round" 
+      size="large" 
+      color="secondary" 
+      [disabled]="isSpinning || options.length < 2"
+      (click)="spin()"
+      class="btn-spin-main">
+      <ion-icon slot="start" name="sync-outline" [class.rotating]="isSpinning"></ion-icon>
+      {{ isSpinning ? 'กำลังหมุน (0.8s)...' : 'หมุนวงล้อ! (SPIN)' }}
+    </ion-button>
+  </div>
+
+  <!-- 4. จัดการตัวเลือกในวงล้อ -->
+  <ion-card class="options-card">
+    <ion-card-header>
+      <ion-card-title class="card-title-custom">
+        <span>ตัวเลือกทั้งหมด ({{ options.length }} ข้อ)</span>
+        <span class="tip-sub">อย่างน้อย 2 ข้อ</span>
+      </ion-card-title>
+    </ion-card-header>
+
+    <ion-card-content>
+      <!-- กล่องเพิ่มตัวเลือก -->
+      <div class="add-option-box">
+        <ion-input 
+          class="custom-text-input"
+          placeholder="พิมพ์ตัวเลือกเพิ่ม..." 
+          [(ngModel)]="newOptionText" 
+          (keyup.enter)="addOption()">
+        </ion-input>
+        <ion-button color="primary" fill="solid" (click)="addOption()" [disabled]="!newOptionText.trim()">
+          <ion-icon slot="icon-only" name="add"></ion-icon>
+        </ion-button>
+      </div>
+
+      <!-- รายการตัวเลือกที่มีอยู่ -->
+      <ion-list lines="none" class="options-list">
+        @for (opt of options; track $index; let i = $index) {
+          <ion-item class="option-row">
+            <span class="color-badge" [style.background-color]="opt.color"></span>
+            <ion-label class="option-text">{{ opt.label }}</ion-label>
+            <ion-button fill="clear" color="danger" size="small" slot="end" (click)="removeOption(i)">
+              <ion-icon slot="icon-only" name="close-circle-outline"></ion-icon>
+            </ion-button>
+          </ion-item>
+        }
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+</ion-content>
