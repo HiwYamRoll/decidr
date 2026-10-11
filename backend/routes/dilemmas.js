@@ -219,14 +219,20 @@ router.get('/stats', auth, async (req, res) => {
     const [stats] = await db.query(`
       SELECT 
         COUNT(*) AS total_dilemmas,
-        SUM(CASE WHEN ai_verdict = 'BYE' THEN price ELSE 0 END) AS money_saved,
-        SUM(CASE WHEN user_feedback = 'proud' THEN 1 ELSE 0 END) AS proud_count,
-        SUM(CASE WHEN user_feedback = 'regret' THEN 1 ELSE 0 END) AS regret_count
+        COALESCE(SUM(CASE WHEN ai_verdict = 'BYE' THEN price ELSE 0 END), 0) AS money_saved,
+        COALESCE(SUM(CASE WHEN user_feedback = 'proud' THEN 1 ELSE 0 END), 0) AS proud_count,
+        COALESCE(SUM(CASE WHEN user_feedback = 'regret' THEN 1 ELSE 0 END), 0) AS regret_count
       FROM dilemmas
       WHERE user_id = ?
     `, [userId]);
 
-    res.json(stats[0] || { total_dilemmas: 0, money_saved: 0, proud_count: 0, regret_count: 0 });
+    const row = stats[0] || {};
+    res.json({
+      total_dilemmas: Number(row.total_dilemmas) || 0,
+      money_saved: Number(row.money_saved) || 0,
+      proud_count: Number(row.proud_count) || 0,
+      regret_count: Number(row.regret_count) || 0
+    });
   } catch (error) {
     console.error('Get stats error:', error);
     res.status(500).json({ message: 'ไม่สามารถดึงสถิติได้', error: error.message });

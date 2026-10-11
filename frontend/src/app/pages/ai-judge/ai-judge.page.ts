@@ -14,7 +14,7 @@ import { LoadingController, ToastController, ModalController } from '@ionic/angu
   styleUrls: ['./ai-judge.page.scss'],
   standalone: false
 })
-export class AiJudgePage implements OnInit {
+export class AiJudgePage {
   title: string = '';
   price: number | null = null;
   selectedMode: string = 'roast';
@@ -72,8 +72,6 @@ export class AiJudgePage implements OnInit {
     private loadingCtrl: LoadingController,
     private toastCtrl: ToastController
   ) {}
-
-  ngOnInit() {}
 
   // คำอธิบายระดับกิเลสตาม Slider
   getGuiltText(val: number): string {

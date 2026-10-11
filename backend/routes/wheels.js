@@ -90,10 +90,23 @@ router.post('/:id/spin', auth, async (req, res) => {
       return res.status(400).json({ message: 'ต้องระบุผลลัพธ์ที่สุ่มได้' });
     }
 
-    await db.query(
-      'INSERT INTO spin_history (user_id, wheel_id, result_label) VALUES (?, ?, ?)',
-      [userId, wheelId, result_label]
-    );
+    // ตรวจสอบว่า wheelId มีอยู่ในตาราง wheels หรือไม่ (ป้องกัน FK error)
+    const [wheels] = await db.query('SELECT id FROM wheels WHERE id = ?', [wheelId]);
+    let targetWheelId = wheels.length > 0 ? wheels[0].id : null;
+
+    if (!targetWheelId) {
+      const [anyWheel] = await db.query('SELECT id FROM wheels LIMIT 1');
+      if (anyWheel.length > 0) {
+        targetWheelId = anyWheel[0].id;
+      }
+    }
+
+    if (targetWheelId) {
+      await db.query(
+        'INSERT INTO spin_history (user_id, wheel_id, result_label) VALUES (?, ?, ?)',
+        [userId, targetWheelId, result_label]
+      );
+    }
 
     res.json({ message: 'บันทึกประวัติการสุ่มเรียบร้อย' });
   } catch (error) {

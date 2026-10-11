@@ -13,8 +13,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// เสิร์ฟรูปภาพที่อัปโหลดจากกล้องให้ Frontend เรียกดูได้
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// เสิร์ฟรูปภาพที่อัปโหลดจากกล้องให้ Frontend เรียกดูได้ พร้อมเปิด CORS ชัดเจน
+app.use('/uploads', cors(), express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
